@@ -16,7 +16,7 @@ almost the same as official SDK:
 ### [Optional] Generate a new API key for an API Wallet
 Generate and authorize a new API private key on https://app.hyperliquid.xyz/API, and set the API wallet's private key as the `secret_key` in examples/config.json. Note that you must still set the public key of the main wallet *not* the API wallet as the `account_address` in examples/config.json
 
-**DIFFERENCE**
+**DIFFERENCE FOR LTP SDK**
 
 you need to get LTP API KEY/Secret, and ask LTP manager to setup hyperliquid subaccount for you.
 
