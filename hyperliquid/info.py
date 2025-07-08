@@ -17,6 +17,8 @@ from hyperliquid.websocket_manager import WebsocketManager
 class Info(API):
     def __init__(
         self,
+        LT_API_KEY: str,
+        LT_API_SECRET: str,
         base_url: Optional[str] = None,
         skip_ws: Optional[bool] = False,
         meta: Optional[Meta] = None,
@@ -25,7 +27,7 @@ class Info(API):
         # the original dex.
         perp_dexs: Optional[List[str]] = None,
     ):  # pylint: disable=too-many-locals
-        super().__init__(base_url)
+        super().__init__(LT_API_KEY, LT_API_SECRET, base_url)
         self.ws_manager: Optional[WebsocketManager] = None
         if not skip_ws:
             self.ws_manager = WebsocketManager(self.base_url)

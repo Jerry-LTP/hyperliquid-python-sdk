@@ -3,14 +3,18 @@ import time
 import example_utils
 
 from hyperliquid.utils import constants
-
+from dotenv import load_dotenv
+import os
 
 def main():
-    address, info, exchange = example_utils.setup(constants.TESTNET_API_URL, skip_ws=True)
+    load_dotenv()
+    ltp_api_key = os.getenv("LTP_API_KEY")
+    ltp_api_secret = os.getenv("LTP_API_SECRET")    
+    address, info, exchange = example_utils.setup(ltp_api_key, ltp_api_secret, constants.TESTNET_LTP_API_URL, skip_ws=True)
 
-    coin = "ETH"
-    is_buy = False
-    sz = 0.05
+    coin = "BTC"
+    is_buy = True
+    sz = 0.001
 
     print(f"We try to Market {'Buy' if is_buy else 'Sell'} {sz} {coin}.")
 

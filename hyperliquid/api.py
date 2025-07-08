@@ -1,5 +1,8 @@
 import json
 import logging
+import time
+import hmac
+import hashlib
 from json import JSONDecodeError
 
 import requests
@@ -10,16 +13,49 @@ from hyperliquid.utils.types import Any
 
 
 class API:
-    def __init__(self, base_url=None):
+    def __init__(self, LT_API_KEY, LT_API_SECRET, base_url=None):
         self.base_url = base_url or MAINNET_API_URL
         self.session = requests.Session()
         self.session.headers.update({"Content-Type": "application/json"})
         self._logger = logging.getLogger(__name__)
+        self.ltp_api_key = LT_API_KEY
+        self.ltp_api_secret = LT_API_SECRET
 
     def post(self, url_path: str, payload: Any = None) -> Any:
-        payload = payload or {}
+        # 构建请求体
+        if payload:
+            new_body = {"body": json.dumps(payload)}
+        else:
+            new_body = {}
+
+        # 构建加密字符串
+        to_encrypt = ""
+        if new_body:
+            for key, value in new_body.items():
+                to_encrypt += f"{key}={value}&"
+        
+        # 添加时间戳
+        now = int(time.time())
+        to_encrypt += str(now)
+
+        # 创建HMAC签名
+        hmac_obj = hmac.new(
+            self.ltp_api_secret.encode('utf-8'),
+            to_encrypt.encode('utf-8'),
+            hashlib.sha256
+        )
+        signature = hmac_obj.hexdigest()
+
+        # 设置请求头
+        headers = {
+            "Content-Type": "application/json",
+            "X-MBX-APIKEY": self.ltp_api_key,
+            "signature": signature,
+            "nonce": str(now)
+        }
+
         url = self.base_url + url_path
-        response = self.session.post(url, json=payload)
+        response = self.session.post(url, json=new_body, headers=headers)
         self._handle_exception(response)
         try:
             return response.json()

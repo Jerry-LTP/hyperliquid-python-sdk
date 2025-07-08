@@ -7,10 +7,15 @@ from hyperliquid.utils import constants
 PURR = "PURR/USDC"
 OTHER_COIN = "@8"
 OTHER_COIN_NAME = "KORILA/USDC"
+from dotenv import load_dotenv
+import os
 
 
 def main():
-    address, info, exchange = example_utils.setup(base_url=constants.TESTNET_API_URL, skip_ws=True)
+    load_dotenv()
+    ltp_api_key = os.getenv("LTP_API_KEY")
+    ltp_api_secret = os.getenv("LTP_API_SECRET")
+    address, info, exchange = example_utils.setup(ltp_api_key, ltp_api_secret, constants.TESTNET_LTP_API_URL, skip_ws=True)
 
     # Get the user state and print out position information
     spot_user_state = info.spot_user_state(address)

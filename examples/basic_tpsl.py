@@ -3,14 +3,21 @@ import argparse
 import example_utils
 
 from hyperliquid.utils import constants
+from dotenv import load_dotenv
+import os
 
 
 def main():
+    load_dotenv()
+    ltp_api_key = os.getenv("LTP_API_KEY")
+    ltp_api_secret = os.getenv("LTP_API_SECRET")   
     parser = argparse.ArgumentParser(description="basic_tpsl")
     parser.add_argument("--is_buy", action="store_true")
     args = parser.parse_args()
 
-    address, info, exchange = example_utils.setup(constants.TESTNET_API_URL, skip_ws=True)
+
+
+    address, info, exchange = example_utils.setup(ltp_api_key, ltp_api_secret, constants.TESTNET_LTP_API_URL, skip_ws=True)
 
     is_buy = args.is_buy
     # Place an order that should execute by setting the price very aggressively
