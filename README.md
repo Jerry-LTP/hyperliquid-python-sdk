@@ -31,3 +31,8 @@ See [examples](examples) for more complete examples. You can also checkout the r
 ## CAUTIONS
 
 LTP only update some of the the info and exchange http interface, for ws part, it stays the same as official SDK.
+
+you may check this diff 
+https://github.com/hyperliquid-dex/hyperliquid-python-sdk/compare/master...Jerry-LTP:hyperliquid-python-sdk:master
+
+to see the change of ltp on the original repo
