@@ -13,17 +13,22 @@ almost the same as official SDK:
 - Set the public key as the `account_address` in examples/config.json.
 - Set your private key as the `secret_key` in examples/config.json.
 - See the example of loading the config in examples/example_utils.py
-### [Optional] Generate a new API key for an API Wallet
+### Generate a new API key for an API Wallet
+**You still need to generate a valid API key to process some api calls direct to hyperliquid.**
+
 Generate and authorize a new API private key on https://app.hyperliquid.xyz/API, and set the API wallet's private key as the `secret_key` in examples/config.json. Note that you must still set the public key of the main wallet *not* the API wallet as the `account_address` in examples/config.json
 
-**DIFFERENCE FOR LTP SDK**
+**NEW FOR LTP SDK**
 
 you need to get LTP API KEY/Secret, and ask LTP manager to setup hyperliquid subaccount for you.
 
 **You need to specify subaccount address in each call, no default subaccount any more**
 
+```
+    //you must specify the vault_address parameter to your sub account address when using Exchange
+    exchange = Exchange(ltp_api_key, ltp_api_secret, account, base_url, vault_address=address, account_address=address, perp_dexs=perp_dexs)
 
-
+```
 ## Usage Examples
 
 See [examples](examples) for more complete examples. You can also checkout the repo and run any of the examples after configuring your private key e.g. 
