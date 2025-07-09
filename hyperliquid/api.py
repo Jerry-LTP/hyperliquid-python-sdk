@@ -74,5 +74,5 @@ class API:
             if err is None:
                 raise ClientError(status_code, None, response.text, None, response.headers)
             error_data = err.get("data")
-            raise ClientError(status_code, err["code"], err["msg"], response.headers, error_data)
+            raise ClientError(status_code, err["error"], response.headers, error_data)
         raise ServerError(status_code, response.text)
