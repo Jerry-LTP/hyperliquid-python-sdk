@@ -22,23 +22,23 @@ class API:
         self.ltp_api_secret = LT_API_SECRET
 
     def post(self, url_path: str, payload: Any = None) -> Any:
-        # 构建请求体
+        # Build request body
         if payload:
             new_body = {"body": json.dumps(payload)}
         else:
             new_body = {}
 
-        # 构建加密字符串
+        # Build encryption string
         to_encrypt = ""
         if new_body:
             for key, value in new_body.items():
                 to_encrypt += f"{key}={value}&"
         
-        # 添加时间戳
+        # Add timestamp
         now = int(time.time())
         to_encrypt += str(now)
 
-        # 创建HMAC签名
+        # Create HMAC signature
         hmac_obj = hmac.new(
             self.ltp_api_secret.encode('utf-8'),
             to_encrypt.encode('utf-8'),
@@ -46,7 +46,7 @@ class API:
         )
         signature = hmac_obj.hexdigest()
 
-        # 设置请求头
+        # Set request headers
         headers = {
             "Content-Type": "application/json",
             "X-MBX-APIKEY": self.ltp_api_key,
