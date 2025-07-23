@@ -15,9 +15,11 @@ def main():
     parser.add_argument("--is_buy", action="store_true")
     args = parser.parse_args()
 
+    base_url = constants.MAINNET_LTP_API_URL
+    if os.getenv("TEST") == "true":
+        base_url = constants.TESTNET_LTP_API_URL
 
-
-    address, info, exchange = example_utils.setup(ltp_api_key, ltp_api_secret, constants.TESTNET_LTP_API_URL, skip_ws=True)
+    address, info, exchange = example_utils.setup(ltp_api_key, ltp_api_secret, base_url=base_url, skip_ws=True)
 
     is_buy = args.is_buy
     # Place an order that should execute by setting the price very aggressively
