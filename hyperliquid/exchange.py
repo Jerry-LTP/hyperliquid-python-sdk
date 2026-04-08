@@ -11,6 +11,7 @@ from hyperliquid.utils.constants import MAINNET_API_URL
 from hyperliquid.utils.signing import (
     CancelByCloidRequest,
     CancelRequest,
+    Grouping,
     ModifyRequest,
     OidOrCloid,
     OrderRequest,
@@ -31,9 +32,13 @@ from hyperliquid.utils.signing import (
     sign_token_delegate_action,
     sign_usd_class_transfer_action,
     sign_usd_transfer_action,
+    sign_user_dex_abstraction_action,
+    sign_user_set_abstraction_action,
     sign_withdraw_from_bridge_action,
 )
 from hyperliquid.utils.types import (
+    Abstraction,
+    AgentAbstraction,
     Any,
     BuilderInfo,
     Cloid,
@@ -45,6 +50,10 @@ from hyperliquid.utils.types import (
     SpotMeta,
     Tuple,
 )
+
+
+def _get_dex(coin: str) -> str:
+    return coin.split(":")[0] if ":" in coin else ""
 
 
 class Exchange(API):
@@ -62,12 +71,13 @@ class Exchange(API):
         account_address: Optional[str] = None,
         spot_meta: Optional[SpotMeta] = None,
         perp_dexs: Optional[List[str]] = None,
+        timeout: Optional[float] = None,
     ):
-        super().__init__(ltp_api_key, ltp_api_secret, base_url)
+        super().__init__(ltp_api_key, ltp_api_secret, base_url, timeout)
         self.wallet = wallet
         self.vault_address = vault_address
         self.account_address = account_address
-        self.info = Info(ltp_api_key, ltp_api_secret, base_url, True, meta, spot_meta, perp_dexs)
+        self.info = Info(ltp_api_key, ltp_api_secret, base_url, True, meta, spot_meta, perp_dexs, timeout)
         self.expires_after: Optional[int] = None
 
     def _post_action(self, action, signature, nonce):
@@ -75,7 +85,7 @@ class Exchange(API):
             "action": action,
             "nonce": nonce,
             "signature": signature,
-            "vaultAddress": self.vault_address if action["type"] != "usdClassTransfer" else None,
+            "vaultAddress": self.vault_address if action["type"] not in ["usdClassTransfer", "sendAsset"] else None,
             "expiresAfter": self.expires_after,
         }
         logging.debug(payload)
@@ -91,7 +101,8 @@ class Exchange(API):
         coin = self.info.name_to_coin[name]
         if not px:
             # Get midprice
-            px = float(self.info.all_mids()[coin])
+            dex = _get_dex(coin)
+            px = float(self.info.all_mids(dex)[coin])
 
         asset = self.info.coin_to_asset[coin]
         # spot assets start at 10000
@@ -131,7 +142,9 @@ class Exchange(API):
             order["cloid"] = cloid
         return self.bulk_orders([order], builder)
 
-    def bulk_orders(self, order_requests: List[OrderRequest], builder: Optional[BuilderInfo] = None) -> Any:
+    def bulk_orders(
+        self, order_requests: List[OrderRequest], builder: Optional[BuilderInfo] = None, grouping: Grouping = "na"
+    ) -> Any:
         order_wires: List[OrderWire] = [
             order_request_to_order_wire(order, self.info.name_to_asset(order["coin"])) for order in order_requests
         ]
@@ -139,7 +152,7 @@ class Exchange(API):
 
         if builder:
             builder["b"] = builder["b"].lower()
-        order_action = order_wires_to_order_action(order_wires, builder)
+        order_action = order_wires_to_order_action(order_wires, builder, grouping)
 
         signature = sign_l1_action(
             self.wallet,
@@ -242,7 +255,8 @@ class Exchange(API):
             address = self.account_address
         if self.vault_address:
             address = self.vault_address
-        positions = self.info.user_state(address)["assetPositions"]
+        dex = _get_dex(coin)
+        positions = self.info.user_state(address, dex)["assetPositions"]
         for position in positions:
             item = position["position"]
             if coin != item["coin"]:
@@ -703,26 +717,7 @@ class Exchange(API):
         )
 
     def spot_deploy_enable_freeze_privilege(self, token: int) -> Any:
-        timestamp = get_timestamp_ms()
-        action = {
-            "type": "spotDeploy",
-            "enableFreezePrivilege": {
-                "token": token,
-            },
-        }
-        signature = sign_l1_action(
-            self.wallet,
-            action,
-            None,
-            timestamp,
-            self.expires_after,
-            self.base_url == MAINNET_API_URL,
-        )
-        return self._post_action(
-            action,
-            signature,
-            timestamp,
-        )
+        return self.spot_deploy_token_action_inner("enableFreezePrivilege", token)
 
     def spot_deploy_freeze_user(self, token: int, user: str, freeze: bool) -> Any:
         timestamp = get_timestamp_ms()
@@ -749,10 +744,16 @@ class Exchange(API):
         )
 
     def spot_deploy_revoke_freeze_privilege(self, token: int) -> Any:
+        return self.spot_deploy_token_action_inner("revokeFreezePrivilege", token)
+
+    def spot_deploy_enable_quote_token(self, token: int) -> Any:
+        return self.spot_deploy_token_action_inner("enableQuoteToken", token)
+
+    def spot_deploy_token_action_inner(self, variant: str, token: int) -> Any:
         timestamp = get_timestamp_ms()
         action = {
             "type": "spotDeploy",
-            "revokeFreezePrivilege": {
+            variant: {
                 "token": token,
             },
         }
@@ -924,16 +925,19 @@ class Exchange(API):
         dex: str,
         oracle_pxs: Dict[str, str],
         all_mark_pxs: List[Dict[str, str]],
+        external_perp_pxs: Dict[str, str],
     ) -> Any:
         timestamp = get_timestamp_ms()
         oracle_pxs_wire = sorted(list(oracle_pxs.items()))
         mark_pxs_wire = [sorted(list(mark_pxs.items())) for mark_pxs in all_mark_pxs]
+        external_perp_pxs_wire = sorted(list(external_perp_pxs.items()))
         action = {
             "type": "perpDeploy",
             "setOracle": {
                 "dex": dex,
                 "oraclePxs": oracle_pxs_wire,
                 "markPxs": mark_pxs_wire,
+                "externalPerpPxs": external_perp_pxs_wire,
             },
         }
         signature = sign_l1_action(
@@ -1120,3 +1124,79 @@ class Exchange(API):
             signature,
             timestamp,
         )
+
+    def agent_enable_dex_abstraction(self) -> Any:
+        timestamp = get_timestamp_ms()
+        action = {
+            "type": "agentEnableDexAbstraction",
+        }
+        signature = sign_l1_action(
+            self.wallet,
+            action,
+            self.vault_address,
+            timestamp,
+            self.expires_after,
+            self.base_url == MAINNET_API_URL,
+        )
+        return self._post_action(
+            action,
+            signature,
+            timestamp,
+        )
+
+    def agent_set_abstraction(self, abstraction: AgentAbstraction) -> Any:
+        timestamp = get_timestamp_ms()
+        action = {
+            "type": "agentSetAbstraction",
+            "abstraction": abstraction,
+        }
+        signature = sign_l1_action(
+            self.wallet,
+            action,
+            self.vault_address,
+            timestamp,
+            self.expires_after,
+            self.base_url == MAINNET_API_URL,
+        )
+        return self._post_action(
+            action,
+            signature,
+            timestamp,
+        )
+
+    def user_dex_abstraction(self, user: str, enabled: bool) -> Any:
+        timestamp = get_timestamp_ms()
+        action = {
+            "type": "userDexAbstraction",
+            "user": user.lower(),
+            "enabled": enabled,
+            "nonce": timestamp,
+        }
+        signature = sign_user_dex_abstraction_action(self.wallet, action, self.base_url == MAINNET_API_URL)
+        return self._post_action(
+            action,
+            signature,
+            timestamp,
+        )
+
+    def user_set_abstraction(self, user: str, abstraction: Abstraction) -> Any:
+        timestamp = get_timestamp_ms()
+        action = {
+            "type": "userSetAbstraction",
+            "user": user.lower(),
+            "abstraction": abstraction,
+            "nonce": timestamp,
+        }
+        signature = sign_user_set_abstraction_action(self.wallet, action, self.base_url == MAINNET_API_URL)
+        return self._post_action(
+            action,
+            signature,
+            timestamp,
+        )
+
+    def noop(self, nonce):
+        action = {"type": "noop"}
+        signature = sign_l1_action(
+            self.wallet, action, self.vault_address, nonce, self.expires_after, self.base_url == MAINNET_API_URL
+        )
+        return self._post_action(action, signature, nonce)
