@@ -8,30 +8,30 @@ TEST_SPOT_META: SpotMeta = {"universe": [], "tokens": []}
 
 
 @pytest.mark.vcr()
-def test_get_user_state():
-    info = Info(skip_ws=True, meta=TEST_META, spot_meta=TEST_SPOT_META)
+def test_get_user_state(ltp_creds):
+    info = Info(*ltp_creds, skip_ws=True, meta=TEST_META, spot_meta=TEST_SPOT_META)
     response = info.user_state("0x5e9ee1089755c3435139848e47e6635505d5a13a")
     assert len(response["assetPositions"]) == 12
     assert response["marginSummary"]["accountValue"] == "1182.312496"
 
 
 @pytest.mark.vcr()
-def test_get_open_orders():
-    info = Info(skip_ws=True, meta=TEST_META, spot_meta=TEST_SPOT_META)
+def test_get_open_orders(ltp_creds):
+    info = Info(*ltp_creds, skip_ws=True, meta=TEST_META, spot_meta=TEST_SPOT_META)
     response = info.open_orders("0x5e9ee1089755c3435139848e47e6635505d5a13a")
     assert len(response) == 196
 
 
 @pytest.mark.vcr()
-def test_get_frontend_open_orders():
-    info = Info(skip_ws=True, meta=TEST_META, spot_meta=TEST_SPOT_META)
+def test_get_frontend_open_orders(ltp_creds):
+    info = Info(*ltp_creds, skip_ws=True, meta=TEST_META, spot_meta=TEST_SPOT_META)
     response = info.frontend_open_orders("0xCB331197E84f135AB9Ed6FB51Cd9757c0bd29d0D")
     assert len(response) == 3
 
 
 @pytest.mark.vcr()
-def test_get_all_mids():
-    info = Info(skip_ws=True, meta=TEST_META, spot_meta=TEST_SPOT_META)
+def test_get_all_mids(ltp_creds):
+    info = Info(*ltp_creds, skip_ws=True, meta=TEST_META, spot_meta=TEST_SPOT_META)
     response = info.all_mids()
     assert "BTC" in response
     assert "ETH" in response
@@ -40,16 +40,16 @@ def test_get_all_mids():
 
 
 @pytest.mark.vcr()
-def test_get_user_fills():
-    info = Info(skip_ws=True, meta=TEST_META, spot_meta=TEST_SPOT_META)
+def test_get_user_fills(ltp_creds):
+    info = Info(*ltp_creds, skip_ws=True, meta=TEST_META, spot_meta=TEST_SPOT_META)
     response = info.user_fills("0xb7b6f3cea3f66bf525f5d8f965f6dbf6d9b017b2")
     assert isinstance(response, list)
     assert response[0]["crossed"] is True
 
 
 @pytest.mark.vcr()
-def test_get_user_fills_by_time():
-    info = Info(skip_ws=True, meta=TEST_META, spot_meta=TEST_SPOT_META)
+def test_get_user_fills_by_time(ltp_creds):
+    info = Info(*ltp_creds, skip_ws=True, meta=TEST_META, spot_meta=TEST_SPOT_META)
     response = info.user_fills_by_time(
         "0xb7b6f3cea3f66bf525f5d8f965f6dbf6d9b017b2", start_time=1683245555699, end_time=1683245884863
     )
@@ -58,8 +58,8 @@ def test_get_user_fills_by_time():
 
 
 @pytest.mark.vcr()
-def test_get_info():
-    info = Info(skip_ws=True, meta=TEST_META, spot_meta=TEST_SPOT_META)
+def test_get_info(ltp_creds):
+    info = Info(*ltp_creds, skip_ws=True, meta=TEST_META, spot_meta=TEST_SPOT_META)
     response = info.meta()
     assert len(response["universe"]) == 28
     assert response["universe"][0]["name"] == "BTC"
@@ -68,8 +68,8 @@ def test_get_info():
 
 @pytest.mark.vcr()
 @pytest.mark.parametrize("endTime", [None, 1684811870000])
-def test_get_funding_history(endTime):
-    info = Info(skip_ws=True, spot_meta=TEST_SPOT_META)
+def test_get_funding_history(ltp_creds, endTime):
+    info = Info(*ltp_creds, skip_ws=True, spot_meta=TEST_SPOT_META)
     if endTime is None:
         response = info.funding_history(name="BTC", startTime=1681923833000)
     else:
@@ -81,8 +81,8 @@ def test_get_funding_history(endTime):
 
 
 @pytest.mark.vcr()
-def test_get_l2_snapshot():
-    info = Info(skip_ws=True, spot_meta=TEST_SPOT_META)
+def test_get_l2_snapshot(ltp_creds):
+    info = Info(*ltp_creds, skip_ws=True, spot_meta=TEST_SPOT_META)
     response: L2BookData = info.l2_snapshot(name="DYDX")
     assert len(response) != 0
     assert len(response["levels"]) == 2
@@ -95,8 +95,8 @@ def test_get_l2_snapshot():
 
 
 @pytest.mark.vcr()
-def test_get_candles_snapshot():
-    info = Info(skip_ws=True, spot_meta=TEST_SPOT_META)
+def test_get_candles_snapshot(ltp_creds):
+    info = Info(*ltp_creds, skip_ws=True, spot_meta=TEST_SPOT_META)
     response = info.candles_snapshot(name="kPEPE", interval="1h", startTime=1684702007000, endTime=1684784807000)
     assert len(response) == 24
     for key in ["T", "c", "h", "i", "l", "n", "o", "s", "t", "v"]:
@@ -104,8 +104,8 @@ def test_get_candles_snapshot():
 
 
 @pytest.mark.vcr()
-def test_user_funding_history_with_end_time():
-    info = Info(skip_ws=True, meta=TEST_META, spot_meta=TEST_SPOT_META)
+def test_user_funding_history_with_end_time(ltp_creds):
+    info = Info(*ltp_creds, skip_ws=True, meta=TEST_META, spot_meta=TEST_SPOT_META)
     response = info.user_funding_history(
         user="0xb7b6f3cea3f66bf525f5d8f965f6dbf6d9b017b2", startTime=1681923833000, endTime=1682010233000
     )
@@ -121,8 +121,8 @@ def test_user_funding_history_with_end_time():
 
 
 @pytest.mark.vcr()
-def test_user_funding_history_without_end_time():
-    info = Info(skip_ws=True, meta=TEST_META, spot_meta=TEST_SPOT_META)
+def test_user_funding_history_without_end_time(ltp_creds):
+    info = Info(*ltp_creds, skip_ws=True, meta=TEST_META, spot_meta=TEST_SPOT_META)
     response = info.user_funding_history(user="0xb7b6f3cea3f66bf525f5d8f965f6dbf6d9b017b2", startTime=1681923833000)
     assert isinstance(response, list), "The answer must be a list"
     for record in response:
@@ -136,8 +136,8 @@ def test_user_funding_history_without_end_time():
 
 
 @pytest.mark.vcr()
-def test_historical_orders():
-    info = Info(skip_ws=True, meta=TEST_META, spot_meta=TEST_SPOT_META)
+def test_historical_orders(ltp_creds):
+    info = Info(*ltp_creds, skip_ws=True, meta=TEST_META, spot_meta=TEST_SPOT_META)
     response = info.historical_orders(user="0x31ca8395cf837de08b24da3f660e77761dfb974b")
     assert isinstance(response, list), "The response should be a list"
     if len(response) > 0:
@@ -149,8 +149,8 @@ def test_historical_orders():
 
 
 @pytest.mark.vcr()
-def test_user_non_funding_ledger_updates_with_end_time():
-    info = Info(skip_ws=True, meta=TEST_META, spot_meta=TEST_SPOT_META)
+def test_user_non_funding_ledger_updates_with_end_time(ltp_creds):
+    info = Info(*ltp_creds, skip_ws=True, meta=TEST_META, spot_meta=TEST_SPOT_META)
     response = info.user_non_funding_ledger_updates(
         user="0x2ba553d9f990a3b66b03b2dc0d030dfc1c061036", startTime=1681923833000, endTime=1682010233000
     )
@@ -162,8 +162,8 @@ def test_user_non_funding_ledger_updates_with_end_time():
 
 
 @pytest.mark.vcr()
-def test_user_non_funding_ledger_updates_without_end_time():
-    info = Info(skip_ws=True, meta=TEST_META, spot_meta=TEST_SPOT_META)
+def test_user_non_funding_ledger_updates_without_end_time(ltp_creds):
+    info = Info(*ltp_creds, skip_ws=True, meta=TEST_META, spot_meta=TEST_SPOT_META)
     response = info.user_non_funding_ledger_updates(
         user="0x2ba553d9f990a3b66b03b2dc0d030dfc1c061036", startTime=1681923833000
     )
@@ -171,8 +171,8 @@ def test_user_non_funding_ledger_updates_without_end_time():
 
 
 @pytest.mark.vcr()
-def test_portfolio():
-    info = Info(skip_ws=True, meta=TEST_META, spot_meta=TEST_SPOT_META)
+def test_portfolio(ltp_creds):
+    info = Info(*ltp_creds, skip_ws=True, meta=TEST_META, spot_meta=TEST_SPOT_META)
     response = info.portfolio(user="0x31ca8395cf837de08b24da3f660e77761dfb974b")
     assert isinstance(response, list), "The response should be a list"
     # Portfolio should contain performance data across different time periods
@@ -188,8 +188,8 @@ def test_portfolio():
 
 
 @pytest.mark.vcr()
-def test_user_twap_slice_fills():
-    info = Info(skip_ws=True, meta=TEST_META, spot_meta=TEST_SPOT_META)
+def test_user_twap_slice_fills(ltp_creds):
+    info = Info(*ltp_creds, skip_ws=True, meta=TEST_META, spot_meta=TEST_SPOT_META)
     response = info.user_twap_slice_fills(user="0x31ca8395cf837de08b24da3f660e77761dfb974b")
     assert isinstance(response, list), "The response should be a list"
     # TWAP slice fills should have similar structure to regular fills
@@ -200,8 +200,8 @@ def test_user_twap_slice_fills():
 
 
 @pytest.mark.vcr()
-def test_user_vault_equities():
-    info = Info(skip_ws=True, meta=TEST_META, spot_meta=TEST_SPOT_META)
+def test_user_vault_equities(ltp_creds):
+    info = Info(*ltp_creds, skip_ws=True, meta=TEST_META, spot_meta=TEST_SPOT_META)
     response = info.user_vault_equities(user="0x2b804617c6f63c040377e95bb276811747006f4b")
     assert isinstance(response, list), "The response should be a list of vault positions"
     if len(response) > 0:
@@ -214,8 +214,8 @@ def test_user_vault_equities():
 
 
 @pytest.mark.vcr()
-def test_user_role():
-    info = Info(skip_ws=True, meta=TEST_META, spot_meta=TEST_SPOT_META)
+def test_user_role(ltp_creds):
+    info = Info(*ltp_creds, skip_ws=True, meta=TEST_META, spot_meta=TEST_SPOT_META)
     response = info.user_role(user="0x31ca8395cf837de08b24da3f660e77761dfb974b")
     assert isinstance(response, dict), "The response should be a dictionary"
     # User role should contain account type and role information
@@ -225,8 +225,8 @@ def test_user_role():
 
 
 @pytest.mark.vcr()
-def test_user_rate_limit():
-    info = Info(skip_ws=True, meta=TEST_META, spot_meta=TEST_SPOT_META)
+def test_user_rate_limit(ltp_creds):
+    info = Info(*ltp_creds, skip_ws=True, meta=TEST_META, spot_meta=TEST_SPOT_META)
     response = info.user_rate_limit(user="0x31ca8395cf837de08b24da3f660e77761dfb974b")
     assert isinstance(response, dict), "The response should be a dictionary"
     # Rate limit response structure varies - just check it's a non-empty dict
@@ -235,8 +235,8 @@ def test_user_rate_limit():
 
 
 @pytest.mark.vcr()
-def test_delegator_history():
-    info = Info(skip_ws=True, meta=TEST_META, spot_meta=TEST_SPOT_META)
+def test_delegator_history(ltp_creds):
+    info = Info(*ltp_creds, skip_ws=True, meta=TEST_META, spot_meta=TEST_SPOT_META)
     response = info.delegator_history(user="0x2ba553d9f990a3b66b03b2dc0d030dfc1c061036")
     assert isinstance(response, list), "The response should be a list"
     # Delegator history should contain delegation/undelegation events
@@ -247,8 +247,8 @@ def test_delegator_history():
 
 
 @pytest.mark.vcr()
-def test_extra_agents():
-    info = Info(skip_ws=True, meta=TEST_META, spot_meta=TEST_SPOT_META)
+def test_extra_agents(ltp_creds):
+    info = Info(*ltp_creds, skip_ws=True, meta=TEST_META, spot_meta=TEST_SPOT_META)
     response = info.extra_agents(user="0xd42f2bB0e06455eDB652e27b7374FC2bDa8448ee")
     assert isinstance(response, list), "The response should be a list"
     # Extra agents should contain agent information

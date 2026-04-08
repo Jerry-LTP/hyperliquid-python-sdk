@@ -17,8 +17,8 @@ from hyperliquid.websocket_manager import WebsocketManager
 class Info(API):
     def __init__(
         self,
-        LT_API_KEY: Optional[str] = None,
-        LT_API_SECRET: Optional[str] = None,
+        LT_API_KEY: str,
+        LT_API_SECRET: str,
         base_url: Optional[str] = None,
         skip_ws: Optional[bool] = False,
         meta: Optional[Meta] = None,

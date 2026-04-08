@@ -15,11 +15,13 @@ from hyperliquid.utils.types import Any, Optional
 class API:
     def __init__(
         self,
-        LT_API_KEY: Optional[str] = None,
-        LT_API_SECRET: Optional[str] = None,
+        LT_API_KEY: str,
+        LT_API_SECRET: str,
         base_url: Optional[str] = None,
         timeout: Optional[float] = None,
     ):
+        if not LT_API_KEY or not LT_API_SECRET:
+            raise ValueError("LT_API_KEY and LT_API_SECRET are required")
         self.base_url = base_url or MAINNET_API_URL
         self.session = requests.Session()
         self.session.headers.update({"Content-Type": "application/json"})
@@ -32,32 +34,29 @@ class API:
         payload = payload or {}
         url = self.base_url + url_path
 
-        if self.ltp_api_key and self.ltp_api_secret:
-            if payload:
-                new_body = {"body": json.dumps(payload)}
-            else:
-                new_body = {}
-            to_encrypt = ""
-            if new_body:
-                for key, value in new_body.items():
-                    to_encrypt += f"{key}={value}&"
-            now = int(time.time())
-            to_encrypt += str(now)
-            hmac_obj = hmac.new(
-                self.ltp_api_secret.encode("utf-8"),
-                to_encrypt.encode("utf-8"),
-                hashlib.sha256,
-            )
-            signature = hmac_obj.hexdigest()
-            headers = {
-                "Content-Type": "application/json",
-                "X-MBX-APIKEY": self.ltp_api_key,
-                "signature": signature,
-                "nonce": str(now),
-            }
-            response = self.session.post(url, json=new_body, headers=headers, timeout=self.timeout)
+        if payload:
+            new_body = {"body": json.dumps(payload)}
         else:
-            response = self.session.post(url, json=payload, timeout=self.timeout)
+            new_body = {}
+        to_encrypt = ""
+        if new_body:
+            for key, value in new_body.items():
+                to_encrypt += f"{key}={value}&"
+        now = int(time.time())
+        to_encrypt += str(now)
+        hmac_obj = hmac.new(
+            self.ltp_api_secret.encode("utf-8"),
+            to_encrypt.encode("utf-8"),
+            hashlib.sha256,
+        )
+        signature = hmac_obj.hexdigest()
+        headers = {
+            "Content-Type": "application/json",
+            "X-MBX-APIKEY": self.ltp_api_key,
+            "signature": signature,
+            "nonce": str(now),
+        }
+        response = self.session.post(url, json=new_body, headers=headers, timeout=self.timeout)
 
         self._handle_exception(response)
         try:
